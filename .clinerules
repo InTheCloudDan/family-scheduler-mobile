@@ -1,0 +1,25 @@
+# Project Intelligence: Family Scheduler Mobile
+
+## Backend Constraints
+- Read-only access to `/Users/danielobrien/code/family-scheduler`.
+- Propose backend changes as requests to the maintainer, do not attempt direct modification.
+
+## API Patterns
+- **Pagination:** Many list endpoints (e.g., `/api/vacation-plans/`, `/api/packing-lists/`, `/api/grocery-lists/`, `/api/families/`) use DRF's standard pagination.
+    - Response format: `{ count: number, next: string | null, previous: string | null, results: Array<Item> }`
+    - **Action:** Redux thunks fetching these lists **MUST** extract the `results` array (e.g., `return response.data.results;`). Failure to do so will cause list screens to appear empty or break.
+
+## UI/Component Notes
+- Using `react-native-paper` as the primary UI library. Apply its components and styling consistently.
+- `react-native-google-places-autocomplete` required specific prop handling and `react-native-get-random-values` polyfill. Be cautious when integrating further.
+
+## Development Notes
+- TypeScript error "Cannot find module '../../navigation/VacationsStackNavigator'" sometimes appears in editor but seems to be a caching issue.
+
+Do not add comments into the code about actions being taken. Only add comments for future understanding of the code itself and what it is designed to facilitate.
+
+User Credentials user: `testuser10` password: `testpass123`
+Api Docs: `http://localhost:8000/api`
+
+
+API Routes are already prefixed with `/api` you do not need to add that.

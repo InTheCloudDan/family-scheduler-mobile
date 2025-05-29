@@ -1,0 +1,92 @@
+platform :ios, '15.1'
+
+# 1) Build RN and its dependencies as static Swift frameworks
+use_frameworks! :linkage => :static
+install! 'cocoapods', :disable_input_output_paths => true
+
+# 2) Load the React‑Native CocoaPods helpers
+require_relative '../node_modules/react-native/scripts/react_native_pods'
+require_relative '../node_modules/@react-native-community/cli-platform-ios/native_modules'
+prepare_react_native_project!        # sets up codegen & build settings
+
+
+# 3) If you’re on RN ≥0.70, you may need this SocketRocket workaround:
+pre_install do |installer|
+  installer.pod_targets.each do |pod|
+    if pod.name == 'SocketRocket'
+      def pod.build_type; Pod::BuildType.static_library; end
+    end
+  end
+end
+
+target 'FamilySchedulerMobile' do
+  config = use_native_modules!    # auto‑link everything
+  use_react_native!(
+    path: config[:reactNativePath],
+    hermes_enabled:   true,
+    new_arch_enabled: true,
+    fabric_enabled:   true
+  )
+
+  post_install do |installer|
+    react_native_post_install(installer)
+  
+    # set C++17 (you may already have this)
+    installer.pods_project.targets.each do |t|
+      if t.name =~ /React-jsinspector|RCT-Folly|ReactCommon|JSIInspector/
+        t.build_configurations.each do |c|
+          c.build_settings['CLANG_CXX_LANGUAGE_STANDARD'] = 'c++17'
+          c.build_settings['CLANG_CXX_LIBRARY']          = 'libc++'
+        end
+      end
+    end
+  
+    # patch InspectorFlags.cpp
+    require 'pathname'
+    root = Pathname.new(__dir__)
+    insp = root + "Pods/React-jsinspector/ReactCommon/jsinspector-modern/InspectorFlags.cpp"
+    text = File.read(insp)
+    fixed = text.gsub(
+      /(\w+)\s*\|\s*flag/,
+      '(\1.has_value() ? static_cast<InspectorFlags::Values>(\1.value() | flag) : flag)'
+    )
+    File.write(insp, fixed)
+  end
+  
+end
+
+# Resolve react_native_pods.rb with node to allow for hoisting
+# require Pod::Executable.execute_command('node', ['-p',
+#   'require.resolve(
+#     "react-native/scripts/react_native_pods.rb",
+#     {paths: [process.argv[1]]},
+#   )', __dir__]).strip
+
+# platform :ios, min_ios_version_supported
+# prepare_react_native_project!
+
+# linkage = ENV['USE_FRAMEWORKS']
+# if linkage != nil
+#   Pod::UI.puts "Configuring Pod with #{linkage}ally linked Frameworks".green
+#   use_frameworks! :linkage => linkage.to_sym
+# end
+
+# target 'FamilySchedulerMobile' do
+#   config = use_native_modules!
+
+#   use_react_native!(
+#     :path => config[:reactNativePath],
+#     # An absolute path to your application root.
+#     :app_path => "#{Pod::Config.instance.installation_root}/.."
+#   )
+
+#   post_install do |installer|
+#     # https://github.com/facebook/react-native/blob/main/packages/react-native/scripts/react_native_pods.rb#L197-L202
+#     react_native_post_install(
+#       installer,
+#       config[:reactNativePath],
+#       :mac_catalyst_enabled => false,
+#       # :ccache_enabled => true
+#     )
+#   end
+# end

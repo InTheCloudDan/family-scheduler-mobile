@@ -1,0 +1,9 @@
+{
+  "dependencies": {
+    "date-fns": "^4.1.0",
+    "react-native-google-places-autocomplete": "^2.5.7"
+  },
+  "devDependencies": {
+    "react-native-dotenv": "^3.4.11"
+  }
+}
